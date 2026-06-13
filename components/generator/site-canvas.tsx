@@ -1165,8 +1165,27 @@ export function SiteCanvas({
 }) {
   const theme = getCanvasTheme(system);
   const dna = getDesignDNA(system);
-  const userBrand = blueprint.design.palette.secondary || blueprint.design.palette.primary;
-  const brand = theme.usesBrandBg ? userBrand : (theme.fixedBrand ?? userBrand);
+  // A color the user explicitly picked in the brief is BINDING — it must
+  // appear as the accent (buttons, badges, glows, links, borders) in every
+  // design system, never silently replaced by the system's fixed brand.
+  // We only fall back to a system's fixed brand (e.g. Vercel white, Vision
+  // Pro silver) when the user left the palette at its industry default.
+  const pickedColor = (
+    blueprint.design.palette.accent ||
+    blueprint.design.palette.secondary ||
+    blueprint.design.palette.primary ||
+    ""
+  ).trim();
+  const userPicked = Boolean(
+    (brief.visual.primaryColor || brief.visual.secondaryColor || brief.visual.accentColor || "").trim(),
+  );
+  const userBrand =
+    blueprint.design.palette.secondary || blueprint.design.palette.primary || pickedColor;
+  const brand = userPicked
+    ? userBrand
+    : theme.usesBrandBg
+      ? userBrand
+      : (theme.fixedBrand ?? userBrand);
   const brandInk = readableTextOn(brand);
   const brandText = readableAccentOn(brand, theme.pageBg);
   const ctx: CtxWithSystem = {
