@@ -1,6 +1,7 @@
 "use client";
 
-import { createContext, useContext, useMemo } from "react";
+import { createContext, useContext, useMemo, useState } from "react";
+import { Menu, X } from "lucide-react";
 import type {
   BlueprintSection,
   ContactInfo,
@@ -378,12 +379,12 @@ function HeroSection({ s, ctx }: { s: BlueprintSection; ctx: Ctx }) {
 
   if (layout === "split") {
     return (
-      <section className={cn("relative grid items-center gap-8 px-7 py-14 lg:grid-cols-[1.1fr_1fr]")} style={heroGlowStyle(ctx)}>
+      <section className={cn("relative grid items-center gap-8 px-7 py-14 @[560px]:grid-cols-[1.1fr_1fr]")} style={heroGlowStyle(ctx)}>
         <div>
           {s.eyebrow && (
             <div className={cn("mb-4 inline-block px-3.5 py-1.5 text-[10px]", theme.chip)}>{s.eyebrow}</div>
           )}
-          <h1 className={cn("max-w-xl text-3xl leading-[1.06] sm:text-[38px]", theme.heading)}>{s.title}</h1>
+          <h1 className={cn("max-w-xl text-3xl leading-[1.06] @[440px]:text-[38px]", theme.heading)}>{s.title}</h1>
           <p className={cn("mt-4 max-w-md text-sm leading-relaxed", theme.muted)}>{s.body}</p>
           <div className="mt-7 flex flex-wrap items-center gap-3">
             {s.cta && <PrimaryBtn ctx={ctx}>{s.cta.label}</PrimaryBtn>}
@@ -412,8 +413,8 @@ function HeroSection({ s, ctx }: { s: BlueprintSection; ctx: Ctx }) {
     return (
       <section className="relative px-7 pb-12 pt-16">
         {s.eyebrow && <div className={cn("mb-6", theme.eyebrow)}>{s.eyebrow}</div>}
-        <h1 className={cn("max-w-3xl text-4xl leading-[1.05] sm:text-5xl", theme.heading)}>{s.title}</h1>
-        <div className="mt-8 grid gap-6 border-t border-current/15 pt-6 lg:grid-cols-[2fr_1fr]">
+        <h1 className={cn("max-w-3xl text-4xl leading-[1.05] @[440px]:text-5xl", theme.heading)}>{s.title}</h1>
+        <div className="mt-8 grid gap-6 border-t border-current/15 pt-6 @[560px]:grid-cols-[2fr_1fr]">
           <p className={cn("max-w-xl text-[15px] leading-relaxed", theme.muted)}>{s.body}</p>
           <div className="flex flex-col items-start gap-3">
             {s.cta && <PrimaryBtn ctx={ctx}>{s.cta.label}</PrimaryBtn>}
@@ -432,7 +433,7 @@ function HeroSection({ s, ctx }: { s: BlueprintSection; ctx: Ctx }) {
     return (
       <section className="relative px-7 pb-14 pt-20" style={heroGlowStyle(ctx)}>
         {s.eyebrow && <div className={cn("mb-8", theme.eyebrow)}>{s.eyebrow}</div>}
-        <h1 className={cn("max-w-5xl text-[44px] leading-[0.98] sm:text-[64px]", theme.heading)}>
+        <h1 className={cn("max-w-5xl text-[44px] leading-[0.98] @[440px]:text-[64px]", theme.heading)}>
           {s.title}
         </h1>
         <div className="mt-10 flex flex-wrap items-end justify-between gap-6">
@@ -467,7 +468,7 @@ function HeroSection({ s, ctx }: { s: BlueprintSection; ctx: Ctx }) {
         </div>
         <div className="relative flex min-h-[420px] flex-col justify-end px-7 pb-12 pt-24">
           {s.eyebrow && <div className={cn("mb-4", theme.eyebrow)}>{s.eyebrow}</div>}
-          <h1 className={cn("max-w-2xl text-4xl leading-[1.02] sm:text-5xl", theme.heading)}>{s.title}</h1>
+          <h1 className={cn("max-w-2xl text-4xl leading-[1.02] @[440px]:text-5xl", theme.heading)}>{s.title}</h1>
           <p className={cn("mt-4 max-w-md text-sm leading-relaxed", theme.muted)}>{s.body}</p>
           <div className="mt-7 flex flex-wrap items-center gap-3">
             {s.cta && <PrimaryBtn ctx={ctx}>{s.cta.label}</PrimaryBtn>}
@@ -488,7 +489,7 @@ function HeroSection({ s, ctx }: { s: BlueprintSection; ctx: Ctx }) {
           {s.eyebrow}
         </div>
       )}
-      <h1 className={cn("mx-auto max-w-2xl text-3xl leading-[1.08] sm:text-[40px]", theme.heading)}>
+      <h1 className={cn("mx-auto max-w-2xl text-3xl leading-[1.08] @[440px]:text-[40px]", theme.heading)}>
         {s.title}
       </h1>
       <p className={cn("mx-auto mt-5 max-w-lg text-sm leading-relaxed", theme.muted)}>{s.body}</p>
@@ -527,7 +528,7 @@ function EmergencyBanner({ s, ctx }: { s: BlueprintSection; ctx: Ctx }) {
           </span>
           <div>
             <span className="text-xs font-bold">{s.title}</span>
-            <span className={cn("ml-2 hidden text-[11px] sm:inline", ctx.theme.muted)}>{s.body}</span>
+            <span className={cn("ml-2 hidden text-[11px] @[440px]:inline", ctx.theme.muted)}>{s.body}</span>
           </div>
         </div>
         {s.cta && <PrimaryBtn ctx={ctx}>{s.cta.label}</PrimaryBtn>}
@@ -560,7 +561,7 @@ function BeforeAfter({ s, ctx }: { s: BlueprintSection; ctx: Ctx }) {
         <h2 className={cn("text-2xl", theme.heading)}>{s.title}</h2>
         <p className={cn("mx-auto mt-2.5 max-w-md text-xs leading-relaxed", theme.muted)}>{s.body}</p>
       </div>
-      <div className="mt-7 grid gap-4 sm:grid-cols-3">
+      <div className="mt-7 grid gap-4 @[440px]:grid-cols-3">
         {s.items?.slice(0, 3).map((item, i) => (
           <figure key={i} className={cn("overflow-hidden", theme.panel)}>
             <div className="relative flex aspect-[4/3]">
@@ -611,7 +612,7 @@ function ServiceGrid({ s, ctx }: { s: BlueprintSection; ctx: Ctx }) {
         <Eyebrow ctx={ctx}>{s.eyebrow}</Eyebrow>
         <h2 className={cn("mx-auto max-w-xl text-2xl", theme.heading)}>{s.title}</h2>
       </div>
-      <div className="mt-7 grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-7 grid gap-3.5 @[440px]:grid-cols-2 @[560px]:grid-cols-3">
         {s.items?.map((item, i) => (
           <div key={i} className={cn("p-5", theme.panel)}>
             <span
@@ -635,7 +636,7 @@ function ProcessSection({ s, ctx }: { s: BlueprintSection; ctx: Ctx }) {
     <section className={ctx.pad}>
       <Eyebrow ctx={ctx}>{s.eyebrow}</Eyebrow>
       <h2 className={cn("max-w-md text-2xl", theme.heading)}>{s.title}</h2>
-      <div className="mt-7 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-7 grid gap-5 @[440px]:grid-cols-2 @[560px]:grid-cols-4">
         {s.items?.map((item, i) => (
           <div key={i} className="relative">
             <div className="font-editorial text-4xl font-light italic opacity-30" style={{ color: ctx.brandText }}>
@@ -654,7 +655,7 @@ function StatsBand({ s, ctx }: { s: BlueprintSection; ctx: Ctx }) {
   return (
     <section className="px-7 py-10">
       <div
-        className={cn("grid grid-cols-2 gap-px overflow-hidden sm:grid-cols-4", ctx.theme.panel)}
+        className={cn("grid grid-cols-2 gap-px overflow-hidden @[440px]:grid-cols-4", ctx.theme.panel)}
         style={{ background: `${ctx.brand}0d` }}
       >
         {s.stats?.map((st) => (
@@ -674,7 +675,7 @@ function SplitSection({ s, ctx }: { s: BlueprintSection; ctx: Ctx }) {
   const { theme } = ctx;
   return (
     <section className={ctx.pad}>
-      <div className="grid items-start gap-7 lg:grid-cols-[1fr_1.1fr]">
+      <div className="grid items-start gap-7 @[560px]:grid-cols-[1fr_1.1fr]">
         <div>
           <Eyebrow ctx={ctx}>{s.eyebrow}</Eyebrow>
           <h2 className={cn("text-2xl", theme.heading)}>{s.title}</h2>
@@ -714,7 +715,7 @@ function Packages({ s, ctx }: { s: BlueprintSection; ctx: Ctx }) {
         <Eyebrow ctx={ctx}>{s.eyebrow}</Eyebrow>
         <h2 className={cn("text-2xl", theme.heading)}>{s.title}</h2>
       </div>
-      <div className="mt-7 grid gap-4 sm:grid-cols-3">
+      <div className="mt-7 grid gap-4 @[440px]:grid-cols-3">
         {s.items?.slice(0, 3).map((item, i) => {
           const featured = Boolean(item.meta);
           return (
@@ -750,7 +751,7 @@ function Seasonal({ s, ctx }: { s: BlueprintSection; ctx: Ctx }) {
     <section className={ctx.pad}>
       <Eyebrow ctx={ctx}>{s.eyebrow}</Eyebrow>
       <h2 className={cn("text-2xl", theme.heading)}>{s.title}</h2>
-      <div className="mt-6 grid gap-3 sm:grid-cols-4">
+      <div className="mt-6 grid gap-3 @[440px]:grid-cols-4">
         {s.items?.map((item, i) => (
           <div key={i} className={cn("p-4", theme.panel)}>
             <div className={cn("text-[10px] uppercase tracking-[0.18em]", theme.eyebrow)} style={{ color: ctx.brandText }}>
@@ -789,7 +790,7 @@ function Testimonials({ s, ctx }: { s: BlueprintSection; ctx: Ctx }) {
         <Eyebrow ctx={ctx}>{s.eyebrow}</Eyebrow>
         <h2 className={cn("text-2xl", theme.heading)}>{s.title}</h2>
       </div>
-      <div className="mt-7 grid gap-4 sm:grid-cols-2">
+      <div className="mt-7 grid gap-4 @[440px]:grid-cols-2">
         {s.items?.slice(0, 4).map((item, i) => (
           <blockquote key={i} className={cn("p-6", theme.panel)}>
             <div className="flex gap-0.5 text-[11px]" style={{ color: ctx.brandText }}>
@@ -815,7 +816,7 @@ function Gallery({ s, ctx }: { s: BlueprintSection; ctx: Ctx }) {
         <Eyebrow ctx={ctx}>{s.eyebrow}</Eyebrow>
         <h2 className={cn("text-2xl", theme.heading)}>{s.title}</h2>
       </div>
-      <div className="mt-7 grid grid-cols-2 gap-3.5 sm:grid-cols-3">
+      <div className="mt-7 grid grid-cols-2 gap-3.5 @[440px]:grid-cols-3">
         {s.items?.slice(0, 6).map((item, i) => (
           <figure key={i} className={cn("overflow-hidden", theme.panel)}>
             <div className="aspect-[4/3]">
@@ -880,7 +881,7 @@ function FinalCta({ s, ctx }: { s: BlueprintSection; ctx: Ctx }) {
         className={cn("p-10 text-center", theme.panel)}
         style={{ background: `linear-gradient(135deg, ${brand}2b, transparent 65%)` }}
       >
-        <h2 className={cn("mx-auto max-w-lg text-2xl sm:text-3xl", theme.heading)}>{s.title}</h2>
+        <h2 className={cn("mx-auto max-w-lg text-2xl @[440px]:text-3xl", theme.heading)}>{s.title}</h2>
         <p className={cn("mx-auto mt-3 max-w-md text-sm leading-relaxed", theme.muted)}>{s.body}</p>
         {s.cta && (
           <div className="mt-7">
@@ -917,6 +918,72 @@ const RENDERERS: Record<string, (p: { s: BlueprintSection; ctx: Ctx }) => React.
 };
 
 /* ---------- nav variants (DNA: navStyle) ---------- */
+
+/**
+ * Mobile-only hamburger. Shown below the container's 440px breakpoint
+ * (i.e. in the phone preview), where the inline links are hidden. Reveals
+ * the page links and the primary CTA in a tap-friendly dropdown.
+ */
+function NavMobileToggle({
+  ctx,
+  navPages,
+  cta,
+}: {
+  ctx: Ctx;
+  navPages: string[];
+  cta: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const { theme } = ctx;
+  return (
+    <div className="relative @[440px]:hidden">
+      <button
+        type="button"
+        aria-label={open ? "Close menu" : "Open menu"}
+        aria-expanded={open}
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen((v) => !v);
+        }}
+        className={cn(
+          "flex h-8 w-8 items-center justify-center rounded-lg border border-current/15",
+          theme.heading,
+        )}
+      >
+        {open ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+      </button>
+      {open && (
+        <div
+          className={cn(
+            "absolute right-0 top-10 z-30 w-44 overflow-hidden rounded-xl border border-current/12 p-1.5 backdrop-blur-xl",
+            theme.panel,
+          )}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {navPages.map((p) => (
+            <a
+              key={p}
+              href={`#${p.toLowerCase().replace(/\s+/g, "-")}`}
+              onClick={() => setOpen(false)}
+              className={cn(
+                "block rounded-lg px-3 py-2 text-[12px] transition-colors hover:bg-current/5",
+                theme.heading,
+              )}
+            >
+              {p}
+            </a>
+          ))}
+          <span
+            className={cn("mt-1 block rounded-lg px-3 py-2 text-center text-[12px] font-semibold", theme.button)}
+            style={{ backgroundColor: ctx.brand, color: ctx.brandInk }}
+          >
+            {cta}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function SiteNav({
   ctx,
@@ -957,17 +1024,20 @@ function SiteNav({
           )}
         >
           {Logo}
-          <div className={cn("hidden gap-5 text-[11px] sm:flex", theme.muted)}>
+          <div className={cn("hidden gap-5 text-[11px] @[440px]:flex", theme.muted)}>
             {navPages.map((p) => (
               <span key={p}>{p}</span>
             ))}
           </div>
-          <span
-            className={cn("px-3.5 py-1.5 text-[11px]", theme.button)}
-            style={{ backgroundColor: ctx.brand, color: ctx.brandInk }}
-          >
-            {cta}
-          </span>
+          <div className="flex items-center gap-2">
+            <span
+              className={cn("hidden px-3.5 py-1.5 text-[11px] @[440px]:inline", theme.button)}
+              style={{ backgroundColor: ctx.brand, color: ctx.brandInk }}
+            >
+              {cta}
+            </span>
+            <NavMobileToggle ctx={ctx} navPages={navPages} cta={cta} />
+          </div>
         </div>
       </div>
     );
@@ -977,23 +1047,24 @@ function SiteNav({
     return (
       <div className="flex items-center justify-between border-b-2 border-current/15 px-7 py-3.5">
         {Logo}
-        <div className={cn("hidden gap-5 text-[11px] font-bold uppercase sm:flex", theme.muted)}>
+        <div className={cn("hidden gap-5 text-[11px] font-bold uppercase @[440px]:flex", theme.muted)}>
           {navPages.map((p) => (
             <span key={p}>{p}</span>
           ))}
         </div>
         <div className="flex items-center gap-3">
           {phone && (
-            <span className="hidden text-[12px] font-extrabold tabular-nums md:inline" style={{ color: ctx.brandText }}>
+            <span className="hidden text-[12px] font-extrabold tabular-nums @[440px]:inline" style={{ color: ctx.brandText }}>
               {phone}
             </span>
           )}
           <span
-            className={cn("px-4 py-2 text-[11px]", theme.button)}
+            className={cn("hidden px-4 py-2 text-[11px] @[440px]:inline", theme.button)}
             style={{ backgroundColor: ctx.brand, color: ctx.brandInk }}
           >
             {cta}
           </span>
+          <NavMobileToggle ctx={ctx} navPages={navPages} cta={cta} />
         </div>
       </div>
     );
@@ -1003,12 +1074,13 @@ function SiteNav({
     return (
       <div className="flex items-center justify-between px-7 py-5">
         {Logo}
-        <div className={cn("hidden gap-6 text-[10px] uppercase tracking-[0.18em] sm:flex", theme.muted)}>
+        <div className={cn("hidden gap-6 text-[10px] uppercase tracking-[0.18em] @[440px]:flex", theme.muted)}>
           {navPages.map((p) => (
             <span key={p}>{p}</span>
           ))}
           <span style={{ color: ctx.brandText }}>{cta}</span>
         </div>
+        <NavMobileToggle ctx={ctx} navPages={navPages} cta={cta} />
       </div>
     );
   }
@@ -1018,17 +1090,20 @@ function SiteNav({
       <div className="px-5 pt-4">
         <div className={cn("flex items-center justify-between px-5 py-3", theme.panel)}>
           {Logo}
-          <div className={cn("hidden gap-5 text-[11px] sm:flex", theme.muted)}>
+          <div className={cn("hidden gap-5 text-[11px] @[440px]:flex", theme.muted)}>
             {navPages.map((p) => (
               <span key={p}>{p}</span>
             ))}
           </div>
-          <span
-            className={cn("px-3.5 py-1.5 text-[11px]", theme.button)}
-            style={{ backgroundColor: ctx.brand, color: ctx.brandInk }}
-          >
-            {cta}
-          </span>
+          <div className="flex items-center gap-2">
+            <span
+              className={cn("hidden px-3.5 py-1.5 text-[11px] @[440px]:inline", theme.button)}
+              style={{ backgroundColor: ctx.brand, color: ctx.brandInk }}
+            >
+              {cta}
+            </span>
+            <NavMobileToggle ctx={ctx} navPages={navPages} cta={cta} />
+          </div>
         </div>
       </div>
     );
@@ -1038,17 +1113,20 @@ function SiteNav({
   return (
     <div className="flex items-center justify-between border-b border-current/10 px-7 py-4 opacity-95">
       {Logo}
-      <div className={cn("hidden gap-5 text-[11px] sm:flex", theme.muted)}>
+      <div className={cn("hidden gap-5 text-[11px] @[440px]:flex", theme.muted)}>
         {navPages.map((p) => (
           <span key={p}>{p}</span>
         ))}
       </div>
-      <span
-        className={cn("px-3.5 py-1.5 text-[11px]", theme.button)}
-        style={{ backgroundColor: ctx.brand, color: ctx.brandInk }}
-      >
-        {cta}
-      </span>
+      <div className="flex items-center gap-2">
+        <span
+          className={cn("hidden px-3.5 py-1.5 text-[11px] @[440px]:inline", theme.button)}
+          style={{ backgroundColor: ctx.brand, color: ctx.brandInk }}
+        >
+          {cta}
+        </span>
+        <NavMobileToggle ctx={ctx} navPages={navPages} cta={cta} />
+      </div>
     </div>
   );
 }
@@ -1116,7 +1194,7 @@ export function SiteCanvas({
 
   return (
     <EditorCtx.Provider value={bridge}>
-      <div className={cn("min-h-full text-[13px] leading-relaxed", theme.page)}>
+      <div className={cn("@container min-h-full text-[13px] leading-relaxed", theme.page)}>
         <SiteNav
           ctx={ctx}
           name={name}
