@@ -61,6 +61,40 @@ import type {
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
+/** Resolve a model-supplied design system (id OR display name) to a real id. */
+function resolveSystemId(val: unknown): DesignSystemId | null {
+  if (typeof val !== "string") return null;
+  const slug = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+  const want = slug(val);
+  const wantLoose = want.replace(/-/g, "");
+  for (const d of DESIGN_SYSTEMS) {
+    const id = d.id as string;
+    if (id === val || slug(d.name) === want || id === want) return d.id as DesignSystemId;
+    // loose: "apple vision pro" / "vision pro" → vision-pro
+    const idLoose = id.replace(/-/g, "");
+    if (wantLoose === idLoose || wantLoose.includes(idLoose) || idLoose.includes(wantLoose))
+      return d.id as DesignSystemId;
+  }
+  return null;
+}
+
+/** Common color names → hex so the canvas's contrast math always works. */
+const COLOR_NAMES: Record<string, string> = {
+  red: "#ef4444", crimson: "#dc2626", orange: "#f97316", amber: "#f59e0b",
+  yellow: "#eab308", gold: "#c9a96a", lime: "#84cc16", green: "#16a34a",
+  emerald: "#10b981", teal: "#14b8a6", cyan: "#06b6d4", sky: "#0ea5e9",
+  blue: "#2563eb", indigo: "#4f46e5", violet: "#7c3aed", purple: "#9333ea",
+  pink: "#ec4899", rose: "#f43f5e", black: "#0a0a0c", white: "#f5f5f7",
+  gray: "#6b7280", grey: "#6b7280", slate: "#475569", navy: "#1e3a8a",
+};
+/** Normalize a color value to hex when possible; pass hex through untouched. */
+function normalizeColor(val: unknown): string | null {
+  if (typeof val !== "string" || !val.trim()) return null;
+  const v = val.trim().toLowerCase();
+  if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(v)) return v;
+  return COLOR_NAMES[v] ?? (/^#?[0-9a-f]{6}$/i.test(v) ? `#${v.replace("#", "")}` : null);
+}
+
 /* ==========================================================================
    Studio Editor — Framer-lite editing over structured site data.
    Left: page/section tree. Center: clickable live canvas.
@@ -304,14 +338,14 @@ function EditorInner() {
 
   /** Merge a model patch into the live project, preserving image refs. */
   const applyAiPatch = useCallback(
-    (raw: Record<string, unknown>): string => {
-      const summary = typeof raw.summary === "string" ? raw.summary : "Applied your changes.";
+    (raw: Record<string, unknown>): { summary: string; changed: boolean } => {
+      const changes: string[] = [];
       patch((p) => {
         const next = structuredClone(p);
         const bp = next.blueprint;
 
         // Sections — re-attach images by index/type so the model can't drop them.
-        if (Array.isArray(raw.homepage)) {
+        if (Array.isArray(raw.homepage) && raw.homepage.length > 0) {
           const oldByType = new Map<string, BlueprintSection[]>();
           bp.homepage.forEach((s) => {
             const arr = oldByType.get(s.type) ?? [];
@@ -335,28 +369,59 @@ function EditorInner() {
             }
             return merged;
           });
+          changes.push("content");
         }
 
-        // Palette — also stamp brief.visual so the binding rule treats the
-        // new color as user-picked (it must then show as the live accent).
+        // Palette. The canvas's button/accent brand is `palette.secondary ||
+        // palette.primary`, so a single requested color must land on BOTH —
+        // otherwise the old secondary keeps winning. We also stamp brief.visual
+        // so the binding treats it as a user-picked color (overrides fixedBrand).
         const pal = raw.palette as Record<string, string> | undefined;
         if (pal && typeof pal === "object") {
-          bp.design.palette = { ...bp.design.palette, ...pal };
-          if (pal.primary) next.brief.visual.primaryColor = pal.primary;
-          if (pal.secondary) next.brief.visual.secondaryColor = pal.secondary;
-          if (pal.accent) next.brief.visual.accentColor = pal.accent;
+          const primary = normalizeColor(pal.primary);
+          const secondary = normalizeColor(pal.secondary);
+          const accent = normalizeColor(pal.accent);
+          const brand = primary ?? secondary ?? accent;
+          if (brand) {
+            bp.design.palette = {
+              ...bp.design.palette,
+              primary: primary ?? brand,
+              secondary: secondary ?? brand, // make the brand actually show
+              accent: accent ?? bp.design.palette.accent,
+            };
+            next.brief.visual.primaryColor = primary ?? brand;
+            next.brief.visual.secondaryColor = secondary ?? brand;
+            if (accent) next.brief.visual.accentColor = accent;
+            changes.push("colors");
+          }
         }
 
-        if (typeof raw.ctaPrimary === "string") bp.ctaStrategy.primary = raw.ctaPrimary;
-        if (typeof raw.ctaSecondary === "string") bp.ctaStrategy.secondary = raw.ctaSecondary;
+        if (typeof raw.ctaPrimary === "string" && raw.ctaPrimary.trim()) {
+          bp.ctaStrategy.primary = raw.ctaPrimary;
+          changes.push("CTA");
+        }
+        if (typeof raw.ctaSecondary === "string" && raw.ctaSecondary.trim()) {
+          bp.ctaStrategy.secondary = raw.ctaSecondary;
+        }
 
-        // Style switch — only if it's a real system id.
-        if (typeof raw.system === "string" && DESIGN_SYSTEMS.some((d) => d.id === raw.system)) {
-          next.system = raw.system as DesignSystemId;
+        // Style switch — accept an id OR a display name ("Liquid Glass").
+        const sys = resolveSystemId(raw.system);
+        if (sys && sys !== next.system) {
+          next.system = sys;
+          changes.push("design system");
         }
         return next;
       });
-      return summary;
+
+      const modelSummary = typeof raw.summary === "string" ? raw.summary.trim() : "";
+      if (changes.length === 0) {
+        return {
+          summary:
+            "I understood that, but couldn't map it to an editable property yet. Try rephrasing — e.g. “make the buttons blue”, “switch to Liquid Glass”, or “rewrite the hero”.",
+          changed: false,
+        };
+      }
+      return { summary: modelSummary || `Updated ${changes.join(", ")}.`, changed: true };
     },
     [patch],
   );
@@ -386,8 +451,8 @@ function EditorInner() {
           setAiLog((l) => [...l, { role: "err", text: data.error || "Edit failed." }]);
           return;
         }
-        const summary = applyAiPatch(data.patch);
-        setAiLog((l) => [...l, { role: "ai", text: summary }]);
+        const { summary, changed } = applyAiPatch(data.patch);
+        setAiLog((l) => [...l, { role: changed ? "ai" : "err", text: summary }]);
       } catch (err) {
         setAiLog((l) => [
           ...l,

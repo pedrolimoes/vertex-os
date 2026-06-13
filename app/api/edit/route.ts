@@ -45,7 +45,13 @@ RESPONSE SHAPE (include only what changed):
   "system": "liquid-glass"
 }
 
-Allowed system ids: liquid-glass, vision-pro, linear, raycast, arc-browser, vercel, framer, notion, luxury-black, minimal-editorial, startup-modern, premium-local, high-end-agency, contractor-pro, modern-industrial.`;
+Allowed system ids: liquid-glass, vision-pro, linear, raycast, arc-browser, vercel, framer, notion, luxury-black, minimal-editorial, startup-modern, premium-local, high-end-agency, contractor-pro, modern-industrial.
+
+CRITICAL: a "summary" alone changes NOTHING. For every instruction you MUST return the matching structured field(s):
+- Color request ("make the buttons blue", "use a green palette") → ALWAYS include "palette" with hex values, e.g. {"summary":"Set a blue brand color.","palette":{"primary":"#2563eb","secondary":"#2563eb"}}.
+- Style request ("switch to Liquid Glass") → ALWAYS include "system" (use the id, e.g. "liquid-glass").
+- Copy/section request → ALWAYS include the changed "homepage" sections.
+Never return only a summary when a structured field applies.`;
 
 function buildEditUserPrompt(blueprint: SiteBlueprint, system: string, instruction: string): string {
   // Send only the parts an editor touches — keeps the payload tight and the
