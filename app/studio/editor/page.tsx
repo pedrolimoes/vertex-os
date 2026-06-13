@@ -28,8 +28,10 @@ import {
   MousePointerClick,
   Plus,
   Rocket,
+  SendHorizontal,
   Settings2,
   Smartphone,
+  Sparkles,
   Trash2,
   X,
 } from "lucide-react";
@@ -48,7 +50,7 @@ import {
 import { SiteCanvas, type EditorBridge } from "@/components/generator/site-canvas";
 import { DESIGN_SYSTEMS } from "@/lib/discovery";
 import { putImage, resolveImageRefs } from "@/lib/idb-images";
-import { getProject, loadProjects, saveProject } from "@/lib/storage";
+import { getProject, loadProjects, loadSettings, saveProject } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 import type {
   BlueprintItem,
@@ -294,6 +296,110 @@ function EditorInner() {
     }
   };
 
+  /* ---- live AI editor ---- */
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiInput, setAiInput] = useState("");
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiLog, setAiLog] = useState<{ role: "you" | "ai" | "err"; text: string }[]>([]);
+
+  /** Merge a model patch into the live project, preserving image refs. */
+  const applyAiPatch = useCallback(
+    (raw: Record<string, unknown>): string => {
+      const summary = typeof raw.summary === "string" ? raw.summary : "Applied your changes.";
+      patch((p) => {
+        const next = structuredClone(p);
+        const bp = next.blueprint;
+
+        // Sections — re-attach images by index/type so the model can't drop them.
+        if (Array.isArray(raw.homepage)) {
+          const oldByType = new Map<string, BlueprintSection[]>();
+          bp.homepage.forEach((s) => {
+            const arr = oldByType.get(s.type) ?? [];
+            arr.push(s);
+            oldByType.set(s.type, arr);
+          });
+          const taken: Record<string, number> = {};
+          bp.homepage = (raw.homepage as BlueprintSection[]).map((incoming) => {
+            const pool = oldByType.get(incoming.type) ?? [];
+            const idx = taken[incoming.type] ?? 0;
+            taken[incoming.type] = idx + 1;
+            const original = pool[idx];
+            const merged: BlueprintSection = { ...original, ...incoming };
+            if (original?.image && !incoming.image) merged.image = original.image;
+            if (original?.items && Array.isArray(incoming.items)) {
+              merged.items = incoming.items.map((it, j) => ({
+                ...original.items?.[j],
+                ...it,
+                image: it.image ?? original.items?.[j]?.image,
+              }));
+            }
+            return merged;
+          });
+        }
+
+        // Palette — also stamp brief.visual so the binding rule treats the
+        // new color as user-picked (it must then show as the live accent).
+        const pal = raw.palette as Record<string, string> | undefined;
+        if (pal && typeof pal === "object") {
+          bp.design.palette = { ...bp.design.palette, ...pal };
+          if (pal.primary) next.brief.visual.primaryColor = pal.primary;
+          if (pal.secondary) next.brief.visual.secondaryColor = pal.secondary;
+          if (pal.accent) next.brief.visual.accentColor = pal.accent;
+        }
+
+        if (typeof raw.ctaPrimary === "string") bp.ctaStrategy.primary = raw.ctaPrimary;
+        if (typeof raw.ctaSecondary === "string") bp.ctaStrategy.secondary = raw.ctaSecondary;
+
+        // Style switch — only if it's a real system id.
+        if (typeof raw.system === "string" && DESIGN_SYSTEMS.some((d) => d.id === raw.system)) {
+          next.system = raw.system as DesignSystemId;
+        }
+        return next;
+      });
+      return summary;
+    },
+    [patch],
+  );
+
+  const runAiEdit = useCallback(
+    async (instruction: string) => {
+      if (!project || !instruction.trim() || aiBusy) return;
+      setAiBusy(true);
+      setAiInput("");
+      setAiLog((l) => [...l, { role: "you", text: instruction }]);
+      try {
+        const res = await fetch("/api/edit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            blueprint: project.blueprint,
+            system: project.system,
+            instruction,
+            settings: loadSettings(),
+          }),
+        });
+        const data = (await res.json()) as {
+          patch?: Record<string, unknown>;
+          error?: string;
+        };
+        if (!res.ok || !data.patch) {
+          setAiLog((l) => [...l, { role: "err", text: data.error || "Edit failed." }]);
+          return;
+        }
+        const summary = applyAiPatch(data.patch);
+        setAiLog((l) => [...l, { role: "ai", text: summary }]);
+      } catch (err) {
+        setAiLog((l) => [
+          ...l,
+          { role: "err", text: err instanceof Error ? err.message : "Network error." },
+        ]);
+      } finally {
+        setAiBusy(false);
+      }
+    },
+    [project, aiBusy, applyAiPatch],
+  );
+
   if (notFound) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-5 text-center">
@@ -376,6 +482,9 @@ function EditorInner() {
               <Smartphone className="h-3.5 w-3.5" />
             </button>
           </div>
+          <PremiumButton size="sm" variant="accent" onClick={() => setAiOpen((v) => !v)}>
+            <Sparkles className="h-3.5 w-3.5" /> AI Edit
+          </PremiumButton>
           <PremiumButton size="sm" onClick={() => setExportOpen(true)}>
             <Rocket className="h-3.5 w-3.5" /> Export website
           </PremiumButton>
@@ -871,6 +980,127 @@ function EditorInner() {
           </AnimatePresence>
         </div>
       </div>
+
+      {/* ================= Live AI editor ================= */}
+      <AnimatePresence>
+        {aiOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 24, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 24, scale: 0.97 }}
+            transition={{ duration: 0.32, ease }}
+            className="fixed bottom-5 right-5 z-50 flex w-[min(380px,calc(100vw-2.5rem))] flex-col overflow-hidden rounded-2xl"
+          >
+            <GlassPanel elevation="float" reflect className="flex max-h-[70vh] flex-col">
+              {/* header */}
+              <div className="flex items-center justify-between border-b border-hairline px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-accent-dim text-accent shadow-glow-accent">
+                    <Sparkles className="h-3.5 w-3.5" />
+                  </span>
+                  <div>
+                    <div className="text-[13px] font-semibold text-white">AI Editor</div>
+                    <div className="font-mono text-[9px] uppercase tracking-[0.16em] text-white/30">
+                      describe a change · applies live
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setAiOpen(false)}
+                  aria-label="Close AI editor"
+                  className="cursor-pointer rounded-md p-1 text-white/40 transition-colors hover:bg-white/[0.06] hover:text-white"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+
+              {/* transcript */}
+              <div className="flex-1 space-y-2.5 overflow-y-auto px-4 py-3">
+                {aiLog.length === 0 ? (
+                  <div className="space-y-2.5">
+                    <p className="text-[12px] leading-relaxed text-white/45">
+                      Tell me what to change — I edit the live site instantly.
+                    </p>
+                    <div className="space-y-1.5">
+                      {[
+                        "Make the palette emerald green",
+                        "Rewrite the hero to be bolder and shorter",
+                        "Switch the design system to Liquid Glass",
+                        "Hide the stats section",
+                      ].map((s) => (
+                        <button
+                          key={s}
+                          onClick={() => runAiEdit(s)}
+                          disabled={aiBusy}
+                          className="block w-full cursor-pointer rounded-lg border border-hairline bg-white/[0.02] px-3 py-2 text-left text-[12px] text-white/65 transition-colors hover:border-accent/40 hover:bg-accent-dim hover:text-white disabled:opacity-40"
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  aiLog.map((m, i) => (
+                    <div
+                      key={i}
+                      className={cn(
+                        "rounded-xl px-3 py-2 text-[12px] leading-relaxed",
+                        m.role === "you" && "ml-6 border border-hairline bg-white/[0.05] text-white/85",
+                        m.role === "ai" && "mr-6 border border-accent/25 bg-accent-dim text-white/85",
+                        m.role === "err" && "mr-6 border border-red-400/25 bg-red-500/10 text-red-200",
+                      )}
+                    >
+                      {m.role === "ai" && (
+                        <span className="mr-1.5 inline-flex items-center gap-1 font-mono text-[9px] uppercase tracking-[0.16em] text-accent/80">
+                          <Check className="h-3 w-3" /> applied
+                        </span>
+                      )}
+                      {m.text}
+                    </div>
+                  ))
+                )}
+                {aiBusy && (
+                  <div className="mr-6 flex items-center gap-2 rounded-xl border border-accent/20 bg-accent-dim px-3 py-2 text-[12px] text-white/70">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-accent" /> Editing the site…
+                  </div>
+                )}
+              </div>
+
+              {/* composer */}
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  runAiEdit(aiInput);
+                }}
+                className="flex items-end gap-2 border-t border-hairline p-2.5"
+              >
+                <Textarea
+                  value={aiInput}
+                  onChange={(e) => setAiInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      runAiEdit(aiInput);
+                    }
+                  }}
+                  rows={1}
+                  placeholder="e.g. make the buttons green and punchier"
+                  className="max-h-28 min-h-[38px] flex-1 resize-none text-[13px]"
+                />
+                <PremiumButton
+                  type="submit"
+                  size="icon"
+                  variant="accent"
+                  disabled={aiBusy || !aiInput.trim()}
+                  aria-label="Send instruction"
+                >
+                  {aiBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <SendHorizontal className="h-4 w-4" />}
+                </PremiumButton>
+              </form>
+            </GlassPanel>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ================= Export guide modal ================= */}
       <Dialog open={exportOpen} onOpenChange={setExportOpen}>
