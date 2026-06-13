@@ -56,13 +56,16 @@ No environment variables are needed. To test AI generation, add a key in **Studi
 
 1. Fork, then branch from `main`: `git checkout -b feat/luxury-serif-dna`.
 2. Make the change. Keep PRs focused — one design system, one fix, one feature.
-3. Verify before pushing:
-   - `npx tsc --noEmit` is clean
-   - `npm run build` passes
-   - Generate at least two different industries and click through Studio Mode + the Editor + Export
+3. Verify before pushing — every PR that touches the UI must pass the **Definition of Done** (see [`CLAUDE.md`](../CLAUDE.md)). All five are required, not optional:
+   - **Mobile responsiveness** — works at 375px / 768px / 1280px+; nothing overflows or clips.
+   - **Navigation** — sidebar + mobile bar render; every link resolves; active states correct; `⌘K` works.
+   - **Images** — all render, have meaningful `alt` text, and never break their container.
+   - **Layout** — no overflow/overlap at any breakpoint; design-system components reused; aesthetic consistent.
+   - **Build success** — `npm run build` is clean: types, lint, and all 19 pages, **zero errors and zero new warnings** (a dev `200` is not enough).
+   - Also: `npx tsc --noEmit` is clean, and generate at least two industries and click through Studio Mode → Editor → Export.
 4. Open the PR with a short description of *what* and *why*, plus screenshots for anything visual.
 
-We review for: correctness, visual quality, and whether new generation output passes the "would a real designer ship this?" bar.
+We review for: correctness, visual quality, the five gates above, and whether new generation output passes the "would a real designer ship this?" bar.
 
 ## Reporting bugs & requesting features
 
