@@ -11,8 +11,8 @@ Thanks for considering a contribution — this project gets better with every ne
 ## Getting set up
 
 ```bash
-git clone https://github.com/your-org/VertexOS.git
-cd VertexOS
+git clone https://github.com/pedrolimoes/vertex-os.git
+cd vertex-os
 npm install
 npm run dev          # studio at http://localhost:3000
 npx tsc --noEmit     # typecheck

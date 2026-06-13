@@ -73,8 +73,8 @@ VertexOS is **local-first** and needs **no environment variables** and **no data
 ### Run locally
 
 ```bash
-git clone https://github.com/your-org/VertexOS.git
-cd VertexOS
+git clone https://github.com/pedrolimoes/vertex-os.git
+cd vertex-os
 npm install
 npm run build
 npm start            # http://localhost:3000

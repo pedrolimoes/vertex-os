@@ -106,8 +106,8 @@ VertexOS talks to any **OpenAI-compatible** chat completions endpoint. Configure
 
 ```bash
 # 1. Clone
-git clone https://github.com/your-org/VertexOS.git
-cd VertexOS
+git clone https://github.com/pedrolimoes/vertex-os.git
+cd vertex-os
 
 # 2. Install dependencies
 npm install
